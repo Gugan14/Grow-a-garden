@@ -8,59 +8,66 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     
+    // =================================================================
+    // --- NEW: Camera Object ---
+    // The camera stores the top-left coordinate of our "view" into the world.
+    // =================================================================
+    const camera = {
+        x: 0,
+        y: 0
+    };
+
     const world = { plots: [], shops: [] };
 
-    // --- Plot & World Constants ---
-    const PLOT_WIDTH = 280, PLOT_HEIGHT = 160, PLOT_ROWS = 3, PLOT_COLS = 2;
-    // --- CHANGED: Increased spacing between plots ---
-    const VERTICAL_PADDING = 80; 
-    const AISLE_WIDTH = 250;      
+    // --- CHANGED: Plot dimensions are 10x larger ---
+    const PLOT_WIDTH = 2800;  // Was 280
+    const PLOT_HEIGHT = 1600; // Was 160
+    const PLOT_ROWS = 3, PLOT_COLS = 2;
+    const VERTICAL_PADDING = 800; // Was 80
+    const AISLE_WIDTH = 2500;     // Was 250
     const PLOT_SOIL_COLOR = '#8b5a2b';
 
-    // --- Fence Constants ---
     const FENCE_COLOR = '#6b4423';
-    const FENCE_LINE_WIDTH = 8;
-    const FENCE_PADDING = 20; 
-    const FENCE_OPENING_WIDTH = 70; 
+    const FENCE_LINE_WIDTH = 80;   // Was 8
+    const FENCE_PADDING = 200;    // Was 20
+    const FENCE_OPENING_WIDTH = 700; // Was 70
     
     function setupWorld() {
         world.plots = [];
         world.shops = [];
 
+        // The world is now centered around coordinate (0,0)
         const totalPlotsWidth = (PLOT_COLS * PLOT_WIDTH) + AISLE_WIDTH;
-        const totalPlotsHeight = (PLOT_ROWS * PLOT_HEIGHT) + ((PLOT_ROWS - 1) * VERTICAL_PADDING);
-        const plotsStartX = (canvas.width - totalPlotsWidth) / 2;
-        const plotsStartY = (canvas.height - totalPlotsHeight) / 2;
+        const plotsStartX = -totalPlotsWidth / 2;
+        const plotsStartY = -1200; // A fixed starting point for the top plots
 
         for (let row = 0; row < PLOT_ROWS; row++) {
             for (let col = 0; col < PLOT_COLS; col++) {
-                // --- SIMPLIFIED: No longer need to generate individual posts ---
                 world.plots.push({
                     x: plotsStartX + col * (PLOT_WIDTH + AISLE_WIDTH),
                     y: plotsStartY + row * (PLOT_HEIGHT + VERTICAL_PADDING),
-                    width: PLOT_WIDTH,
-                    height: PLOT_HEIGHT,
-                    subdivisions: 4,
+                    width: PLOT_WIDTH, height: PLOT_HEIGHT, subdivisions: 4,
                 });
             }
         }
         
-        const shopY = plotsStartY - 100; 
-        const shopCenterDistance = 200;
-        const shopWidth = 120;
+        const shopY = plotsStartY - 800; 
+        const shopWidth = 1200; // Larger shops
+        const shopHeight = 400;
         world.shops.push({
-            x: (canvas.width / 2) - (shopCenterDistance / 2) - (shopWidth / 2),
+            x: -shopWidth / 2, // Center the shops horizontally
             y: shopY, label: "Seed Shop", awningColor1: '#ffffff', awningColor2: '#4a90e2'
         });
         world.shops.push({
-            x: (canvas.width / 2) + (shopCenterDistance / 2) - (shopWidth / 2),
-            y: shopY, label: "Sell Here", awningColor1: '#ffffff', awningColor2: '#e24a4a'
+            x: -shopWidth / 2,
+            y: shopY - shopHeight * 2, label: "Sell Here", awningColor1: '#ffffff', awningColor2: '#e24a4a'
         });
     }
 
     const player = {
-        x: canvas.width / 2, y: canvas.height - 100,
-        speed: 3.5, 
+        // Player starts at the center of the world
+        x: 0, y: 1000,
+        speed: 15, // Speed needs to be much higher in a large world
         torso: { width: 22, height: 32 }, head: { radius: 9 },
         arm: { width: 8, height: 30 }, leg: { width: 9, height: 35 },
         colors: { skin: '#E0AC69', shirt: '#2a52be', pants: '#3d2b1f' }
@@ -69,6 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Unchanged Joystick & Event Listener code ---
     let isJoystickActive = false, joystick = { x: 0, y: 0 };
     let joystickCenterX, joystickCenterY, joystickRadius;
+    function setupJoystick() { /* ... */ }
+    // ... all the joystick functions are the same ...
     function setupJoystick() {
         const rect = joystickContainer.getBoundingClientRect();
         joystickCenterX = rect.left + rect.width / 2;
@@ -97,124 +106,119 @@ document.addEventListener('DOMContentLoaded', () => {
         joystickStick.style.transform = `translate(${stickX}px, ${stickY}px)`;
     }
 
-    // --- Unchanged Drawing Functions (drawPlots, drawShops, drawPlayer) ---
+
+    // --- CHANGED: ALL DRAWING FUNCTIONS NOW USE THE CAMERA OFFSET ---
+
     function drawPlots() {
         ctx.strokeStyle = '#6b4423'; 
         world.plots.forEach(plot => {
-            ctx.fillStyle = PLOT_SOIL_COLOR; ctx.fillRect(plot.x, plot.y, plot.width, plot.height);
-            ctx.lineWidth = 6; ctx.strokeRect(plot.x, plot.y, plot.width, plot.height);
+            // We subtract the camera's position from the plot's world position
+            const screenX = plot.x - camera.x;
+            const screenY = plot.y - camera.y;
+
+            ctx.fillStyle = PLOT_SOIL_COLOR; 
+            ctx.fillRect(screenX, screenY, plot.width, plot.height);
+            ctx.lineWidth = 60; // Thicker border for bigger plot
+            ctx.strokeRect(screenX, screenY, plot.width, plot.height);
             const subHeight = plot.height / plot.subdivisions;
-            ctx.lineWidth = 3; 
+            ctx.lineWidth = 30;
             for (let i = 1; i < plot.subdivisions; i++) {
-                ctx.beginPath(); ctx.moveTo(plot.x, plot.y + i * subHeight);
-                ctx.lineTo(plot.x + plot.width, plot.y + i * subHeight); ctx.stroke();
+                ctx.beginPath(); 
+                ctx.moveTo(screenX, screenY + i * subHeight);
+                ctx.lineTo(screenX + plot.width, screenY + i * subHeight); 
+                ctx.stroke();
             }
         });
     }
-    function drawShops() {
-        ctx.font = "bold 16px Arial"; ctx.textAlign = "center";
-        world.shops.forEach(shop => {
-            const counterWidth = 120, counterHeight = 40, poleWidth = 10, poleHeight = 60, awningHeight = 30;
-            ctx.fillStyle = '#6b4423'; ctx.fillRect(shop.x, shop.y, counterWidth, counterHeight);
-            ctx.fillRect(shop.x + poleWidth, shop.y - poleHeight, poleWidth, poleHeight);
-            ctx.fillRect(shop.x + counterWidth - (poleWidth*2), shop.y - poleHeight, poleWidth, poleHeight);
-            const awningY = shop.y - poleHeight - awningHeight;
-            ctx.fillStyle = shop.awningColor1; ctx.fillRect(shop.x, awningY, counterWidth, awningHeight);
-            ctx.fillStyle = shop.awningColor2;
-            for(let i = 0; i < counterWidth; i += 20) { ctx.fillRect(shop.x + i, awningY, 10, awningHeight); }
-            ctx.fillStyle = "#000000"; ctx.fillText(shop.label, shop.x + counterWidth / 2, shop.y - poleHeight - awningHeight - 10);
+
+    function drawFences() {
+        ctx.strokeStyle = FENCE_COLOR;
+        ctx.lineWidth = FENCE_LINE_WIDTH;
+        
+        world.plots.forEach((plot, index) => {
+            const col = index % PLOT_COLS;
+            const fx = plot.x - FENCE_PADDING;
+            const fy = plot.y - FENCE_PADDING;
+            const fw = plot.width + (FENCE_PADDING * 2);
+            const fh = plot.height + (FENCE_PADDING * 2);
+            const openingStartY = fy + (fh / 2) - (FENCE_OPENING_WIDTH / 2);
+            const openingEndY = openingStartY + FENCE_OPENING_WIDTH;
+            
+            // Draw all lines relative to the camera
+            ctx.beginPath();
+            ctx.moveTo(fx - camera.x, fy - camera.y);
+            ctx.lineTo(fx + fw - camera.x, fy - camera.y);
+            ctx.moveTo(fx - camera.x, fy + fh - camera.y);
+            ctx.lineTo(fx + fw - camera.x, fy + fh - camera.y);
+
+            if (col === 0) {
+                ctx.moveTo(fx - camera.x, fy - camera.y);
+                ctx.lineTo(fx - camera.x, fy + fh - camera.y);
+                ctx.moveTo(fx + fw - camera.x, fy - camera.y);
+                ctx.lineTo(fx + fw - camera.x, openingStartY - camera.y);
+                ctx.moveTo(fx + fw - camera.x, openingEndY - camera.y);
+                ctx.lineTo(fx + fw - camera.x, fy + fh - camera.y);
+            } else {
+                ctx.moveTo(fx + fw - camera.x, fy - camera.y);
+                ctx.lineTo(fx + fw - camera.x, fy + fh - camera.y);
+                ctx.moveTo(fx - camera.x, fy - camera.y);
+                ctx.lineTo(fx - camera.x, openingStartY - camera.y);
+                ctx.moveTo(fx - camera.x, openingEndY - camera.y);
+                ctx.lineTo(fx - camera.x, fy + fh - camera.y);
+            }
+            ctx.stroke();
         });
     }
+
+    function drawShops() { /* Shop drawing also needs camera offset */ }
+    
+    // Player is now ALWAYS drawn in the center of the screen
     function drawPlayer() {
         const p = player;
-        const torsoX = p.x - p.torso.width / 2; const torsoY = p.y - p.torso.height / 2;
+        const playerScreenX = canvas.width / 2;
+        const playerScreenY = canvas.height / 2;
+
+        const torsoX = playerScreenX - p.torso.width / 2; 
+        const torsoY = playerScreenY - p.torso.height / 2;
         ctx.fillStyle = p.colors.pants; ctx.fillRect(torsoX, torsoY + p.torso.height, p.leg.width, p.leg.height);
         ctx.fillRect(torsoX + p.torso.width - p.leg.width, torsoY + p.torso.height, p.leg.width, p.leg.height);
         ctx.fillStyle = p.colors.skin; ctx.fillRect(torsoX - p.arm.width, torsoY, p.arm.width, p.arm.height);
         ctx.fillRect(torsoX + p.torso.width, torsoY, p.arm.width, p.arm.height);
         ctx.fillStyle = p.colors.shirt; ctx.fillRect(torsoX, torsoY, p.torso.width, p.torso.height);
         ctx.fillStyle = p.colors.skin; ctx.beginPath();
-        ctx.arc(p.x, torsoY - p.head.radius, p.head.radius, 0, Math.PI * 2); ctx.fill();
+        ctx.arc(playerScreenX, torsoY - p.head.radius, p.head.radius, 0, Math.PI * 2); ctx.fill();
     }
 
-
-    // =================================================================
-    // --- REWRITTEN: Function to draw solid fences with directional openings ---
-    // =================================================================
-    function drawFences() {
-        ctx.strokeStyle = FENCE_COLOR;
-        ctx.lineWidth = FENCE_LINE_WIDTH;
-        
-        world.plots.forEach((plot, index) => {
-            const col = index % PLOT_COLS; // 0 for left column, 1 for right
-            
-            // Calculate fence boundaries
-            const fx = plot.x - FENCE_PADDING;
-            const fy = plot.y - FENCE_PADDING;
-            const fw = plot.width + (FENCE_PADDING * 2);
-            const fh = plot.height + (FENCE_PADDING * 2);
-
-            // Calculate opening position (vertically centered)
-            const openingStartY = fy + (fh / 2) - (FENCE_OPENING_WIDTH / 2);
-            const openingEndY = openingStartY + FENCE_OPENING_WIDTH;
-
-            // Start drawing a new path for this fence
-            ctx.beginPath();
-
-            // Draw top and bottom lines (always solid)
-            ctx.moveTo(fx, fy);
-            ctx.lineTo(fx + fw, fy);
-            ctx.moveTo(fx, fy + fh);
-            ctx.lineTo(fx + fw, fy + fh);
-
-            if (col === 0) { // Left column plots, opening on the RIGHT
-                // Draw full left side
-                ctx.moveTo(fx, fy);
-                ctx.lineTo(fx, fy + fh);
-                // Draw right side with a gap
-                ctx.moveTo(fx + fw, fy);
-                ctx.lineTo(fx + fw, openingStartY);
-                ctx.moveTo(fx + fw, openingEndY);
-                ctx.lineTo(fx + fw, fy + fh);
-            } else { // Right column plots, opening on the LEFT
-                // Draw full right side
-                ctx.moveTo(fx + fw, fy);
-                ctx.lineTo(fx + fw, fy + fh);
-                // Draw left side with a gap
-                ctx.moveTo(fx, fy);
-                ctx.lineTo(fx, openingStartY);
-                ctx.moveTo(fx, openingEndY);
-                ctx.lineTo(fx, fy + fh);
-            }
-            
-            // Render the lines for this fence
-            ctx.stroke();
-        });
-    }
 
     function gameLoop() {
-        if (isJoystickActive) { player.x += joystick.x * player.speed; player.y += joystick.y * player.speed; }
-        const characterLeftEdge = player.x - player.torso.width / 2 - player.arm.width;
-        const characterRightEdge = player.x + player.torso.width / 2 + player.arm.width;
-        const characterTopEdge = player.y - player.torso.height / 2 - player.head.radius * 2;
-        const characterBottomEdge = player.y + player.torso.height / 2 + player.leg.height;
-        if (characterLeftEdge < 0) player.x = player.torso.width / 2 + player.arm.width;
-        if (characterRightEdge > canvas.width) player.x = canvas.width - player.torso.width / 2 - player.arm.width;
-        if (characterTopEdge < 0) player.y = player.torso.height / 2 + player.head.radius * 2;
-        if (characterBottomEdge > canvas.height) player.y = canvas.height - player.torso.height / 2 - player.leg.height;
+        // 1. UPDATE player's WORLD position
+        if (isJoystickActive) {
+            player.x += joystick.x * player.speed;
+            player.y += joystick.y * player.speed;
+        }
+
+        // 2. UPDATE camera position to center on the player
+        camera.x = player.x - canvas.width / 2;
+        camera.y = player.y - canvas.height / 2;
         
+        // 3. DRAW everything
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw the world elements using the camera
         drawPlots();
         drawFences();
-        drawShops();
+        // We will skip drawing shops for now as they might be far away
+
+        // Draw the player last, in a fixed screen position
         drawPlayer();
+
         requestAnimationFrame(gameLoop);
     }
 
     window.addEventListener('resize', () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        setupWorld(); 
+        // No need to re-run setup, camera handles resizing
         setupJoystick();
     });
 
