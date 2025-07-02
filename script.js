@@ -12,65 +12,64 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.height = window.innerHeight;
     
     // =================================================================
-    // --- NEW: WORLD & MAP DATA ---
-    // We'll define all our static map elements here.
+    // --- WORLD & MAP DATA (Layout has been changed to match the image) ---
     // =================================================================
     const world = {
         plots: [],
-        fences: [],
-        shops: []
+        shops: [] 
+        // --- REMOVED: No more fences ---
     };
 
-    const PLOT_WIDTH = 250;
-    const PLOT_HEIGHT = 150;
-    const PLOT_ROWS = 2;
-    const PLOT_COLS = 3;
-    const PLOT_PADDING = 60;
+    // --- CHANGED: New constants for the 3x2 layout ---
+    const PLOT_WIDTH = 220;
+    const PLOT_HEIGHT = 120;
+    const PLOT_ROWS = 3; 
+    const PLOT_COLS = 2;
+    const VERTICAL_PADDING = 50; // Space between plots vertically
+    const AISLE_WIDTH = 200;     // Wide central aisle
     const PLOT_SOIL_COLOR = '#8b5a2b';
-    const FENCE_COLOR = '#6b4423';
     
-    // This function calculates the positions for all our world objects
     function setupWorld() {
-        // --- Calculate Plot Positions ---
-        const totalPlotsWidth = (PLOT_COLS * PLOT_WIDTH) + ((PLOT_COLS - 1) * PLOT_PADDING);
-        const totalPlotsHeight = (PLOT_ROWS * PLOT_HEIGHT) + ((PLOT_ROWS - 1) * PLOT_PADDING);
+        // --- Make sure to clear old data when resizing ---
+        world.plots = [];
+        world.shops = [];
+
+        // --- UPDATED: Plot position calculation for the new layout ---
+        const totalPlotsWidth = (PLOT_COLS * PLOT_WIDTH) + AISLE_WIDTH;
+        const totalPlotsHeight = (PLOT_ROWS * PLOT_HEIGHT) + ((PLOT_ROWS - 1) * VERTICAL_PADDING);
         const plotsStartX = (canvas.width - totalPlotsWidth) / 2;
         const plotsStartY = (canvas.height - totalPlotsHeight) / 2;
 
         for (let row = 0; row < PLOT_ROWS; row++) {
             for (let col = 0; col < PLOT_COLS; col++) {
                 world.plots.push({
-                    x: plotsStartX + col * (PLOT_WIDTH + PLOT_PADDING),
-                    y: plotsStartY + row * (PLOT_HEIGHT + PLOT_PADDING),
+                    x: plotsStartX + col * (PLOT_WIDTH + AISLE_WIDTH),
+                    y: plotsStartY + row * (PLOT_HEIGHT + VERTICAL_PADDING),
                     width: PLOT_WIDTH,
                     height: PLOT_HEIGHT,
-                    subdivisions: 4 // How many smaller sections inside the plot
+                    subdivisions: 4 
                 });
             }
         }
         
-        // --- Calculate Fence Positions (around the plots) ---
-        const fencePadding = 30;
-        const fenceArea = {
-            x: plotsStartX - fencePadding,
-            y: plotsStartY - fencePadding,
-            width: totalPlotsWidth + (fencePadding * 2),
-            height: totalPlotsHeight + (fencePadding * 2)
-        };
-        // We'll use this single 'fenceArea' object in our drawing function
-        world.fences.push(fenceArea);
+        // --- REMOVED: All fence calculation logic is gone ---
 
-        // --- Define Shops ---
-        const shopY = fenceArea.y - 100; // Position shops above the fence
+        // --- UPDATED: Shop positions to match new layout ---
+        const shopY = plotsStartY - 100; // Position shops above the plots
+        const firstColX = plotsStartX;
+        const secondColX = plotsStartX + PLOT_WIDTH + AISLE_WIDTH;
+
+        // Seed Shop (top-left)
         world.shops.push({
-            x: fenceArea.x,
+            x: firstColX + (PLOT_WIDTH / 2) - 60, // Center the shop over the plot
             y: shopY,
             label: "Seed Shop",
             awningColor1: '#ffffff',
             awningColor2: '#4a90e2' // Blue
         });
+        // Sell Place (top-right)
         world.shops.push({
-            x: fenceArea.x + 200, // Place it to the right of the first shop
+            x: secondColX + (PLOT_WIDTH / 2) - 60, // Center the shop over the plot
             y: shopY,
             label: "Sell Here",
             awningColor1: '#ffffff',
@@ -80,9 +79,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- PLAYER ---
     const player = {
-        // Start the player below the plots, not in the center of the screen
+        // --- UPDATED: Player starts in the middle of the aisle ---
         x: canvas.width / 2,
-        y: (canvas.height / 2) + (PLOT_ROWS * PLOT_HEIGHT / 2) + (PLOT_PADDING * 2) + 100, 
+        y: canvas.height - 100, // Start near the bottom of the screen
         speed: 4,
         torso: { width: 30, height: 45 },
         head: { radius: 12 },
@@ -127,21 +126,17 @@ document.addEventListener('DOMContentLoaded', () => {
         joystickStick.style.transform = `translate(${stickX}px, ${stickY}px)`;
     }
 
-    // =================================================================
-    // --- NEW: WORLD DRAWING FUNCTIONS ---
-    // =================================================================
+    // --- WORLD DRAWING FUNCTIONS ---
 
     function drawPlots() {
-        ctx.strokeStyle = '#6b4423'; // Border color for plots
+        ctx.strokeStyle = '#6b4423'; 
         ctx.lineWidth = 8;
         
         world.plots.forEach(plot => {
-            // Draw main plot area
             ctx.fillStyle = PLOT_SOIL_COLOR;
             ctx.fillRect(plot.x, plot.y, plot.width, plot.height);
             ctx.strokeRect(plot.x, plot.y, plot.width, plot.height);
 
-            // Draw subdivisions inside the plot
             const subHeight = plot.height / plot.subdivisions;
             ctx.lineWidth = 4;
             for (let i = 1; i < plot.subdivisions; i++) {
@@ -153,56 +148,30 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    function drawFences() {
-        ctx.fillStyle = FENCE_COLOR;
-        const postSize = 10;
-        const postSpacing = 30;
-
-        world.fences.forEach(area => {
-            // Top and Bottom fences
-            for (let x = area.x; x < area.x + area.width; x += postSpacing) {
-                ctx.fillRect(x, area.y - postSize / 2, postSize, postSize); // Top
-                ctx.fillRect(x, area.y + area.height - postSize / 2, postSize, postSize); // Bottom
-            }
-            // Left and Right fences
-            for (let y = area.y; y < area.y + area.height; y += postSpacing) {
-                ctx.fillRect(area.x - postSize / 2, y, postSize, postSize); // Left
-                ctx.fillRect(area.x + area.width - postSize / 2, y, postSize, postSize); // Right
-            }
-        });
-    }
+    // --- REMOVED: The drawFences() function is no longer needed. ---
 
     function drawShops() {
         ctx.font = "bold 16px Arial";
         ctx.textAlign = "center";
         
         world.shops.forEach(shop => {
-            const counterWidth = 120;
-            const counterHeight = 40;
-            const poleWidth = 10;
-            const poleHeight = 60;
+            const counterWidth = 120; const counterHeight = 40;
+            const poleWidth = 10; const poleHeight = 60;
             const awningHeight = 30;
 
-            // Draw Counter
-            ctx.fillStyle = FENCE_COLOR;
+            ctx.fillStyle = '#6b4423';
             ctx.fillRect(shop.x, shop.y, counterWidth, counterHeight);
-
-            // Draw Poles
             ctx.fillRect(shop.x + poleWidth, shop.y - poleHeight, poleWidth, poleHeight);
             ctx.fillRect(shop.x + counterWidth - (poleWidth*2), shop.y - poleHeight, poleWidth, poleHeight);
             
-            // Draw Awning
             const awningY = shop.y - poleHeight - awningHeight;
-            ctx.fillStyle = shop.awningColor1; // White base
+            ctx.fillStyle = shop.awningColor1;
             ctx.fillRect(shop.x, awningY, counterWidth, awningHeight);
-            
-            // Draw stripes on awning
             ctx.fillStyle = shop.awningColor2;
             for(let i = 0; i < counterWidth; i += 20) {
                  ctx.fillRect(shop.x + i, awningY, 10, awningHeight);
             }
             
-            // Draw Label
             ctx.fillStyle = "#000000";
             ctx.fillText(shop.label, shop.x + counterWidth / 2, shop.y - poleHeight - awningHeight - 10);
         });
@@ -227,9 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.fill();
     }
 
-    // =================================================================
     // --- UPDATED GAME LOOP ---
-    // =================================================================
     function gameLoop() {
         // 1. UPDATE player position
         if (isJoystickActive) {
@@ -250,12 +217,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // 3. DRAW everything
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // --- NEW: Draw the world elements first (so they are in the background) ---
+        // Draw the world elements
         drawPlots();
-        drawFences();
         drawShops();
+        // --- REMOVED: drawFences() call is gone ---
 
-        // Draw the player on top of the world
         drawPlayer();
 
         // 4. REQUEST the next frame
@@ -266,13 +232,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('resize', () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        // Recalculate world and joystick positions on resize
         setupWorld(); 
         setupJoystick();
     });
 
     // --- START THE GAME ---
-    setupWorld(); // Initial setup for the map
-    setupJoystick(); // Initial setup for the joystick
-    gameLoop(); // Start the loop
+    setupWorld(); 
+    setupJoystick(); 
+    gameLoop();
 });
