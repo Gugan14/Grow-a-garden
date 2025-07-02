@@ -12,16 +12,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Plot & World Constants ---
     const PLOT_WIDTH = 280, PLOT_HEIGHT = 160, PLOT_ROWS = 3, PLOT_COLS = 2;
-    const VERTICAL_PADDING = 50, AISLE_WIDTH = 200, PLOT_SOIL_COLOR = '#8b5a2b';
+    // --- CHANGED: Increased spacing between plots ---
+    const VERTICAL_PADDING = 80; 
+    const AISLE_WIDTH = 250;      
+    const PLOT_SOIL_COLOR = '#8b5a2b';
 
-    // =================================================================
-    // --- NEW: Fence Constants ---
-    // =================================================================
+    // --- Fence Constants ---
     const FENCE_COLOR = '#6b4423';
-    const FENCE_POST_SIZE = 12;
-    const FENCE_SPACING = 35;
-    const FENCE_PADDING = 20; // How far the fence is from the plot edge
-    const FENCE_OPENING_WIDTH = 60; // How wide the gap in the fence is
+    const FENCE_LINE_WIDTH = 8;
+    const FENCE_PADDING = 20; 
+    const FENCE_OPENING_WIDTH = 70; 
     
     function setupWorld() {
         world.plots = [];
@@ -34,44 +34,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         for (let row = 0; row < PLOT_ROWS; row++) {
             for (let col = 0; col < PLOT_COLS; col++) {
-                const plotX = plotsStartX + col * (PLOT_WIDTH + AISLE_WIDTH);
-                const plotY = plotsStartY + row * (PLOT_HEIGHT + VERTICAL_PADDING);
-                
-                // --- NEW: Generate fences for each plot ---
-                const fencePosts = [];
-                const fenceArea = {
-                    x: plotX - FENCE_PADDING,
-                    y: plotY - FENCE_PADDING,
-                    width: PLOT_WIDTH + (FENCE_PADDING * 2),
-                    height: PLOT_HEIGHT + (FENCE_PADDING * 2),
-                };
-
-                // Top fence
-                for (let x = fenceArea.x; x <= fenceArea.x + fenceArea.width; x += FENCE_SPACING) {
-                    fencePosts.push({ x: x, y: fenceArea.y });
-                }
-                // Left fence
-                for (let y = fenceArea.y + FENCE_SPACING; y < fenceArea.y + fenceArea.height; y += FENCE_SPACING) {
-                    fencePosts.push({ x: fenceArea.x, y: y });
-                }
-                // Right fence
-                for (let y = fenceArea.y + FENCE_SPACING; y < fenceArea.y + fenceArea.height; y += FENCE_SPACING) {
-                    fencePosts.push({ x: fenceArea.x + fenceArea.width, y: y });
-                }
-                // Bottom fence (with opening)
-                const openingStart = fenceArea.x + (fenceArea.width / 2) - (FENCE_OPENING_WIDTH / 2);
-                const openingEnd = openingStart + FENCE_OPENING_WIDTH;
-                for (let x = fenceArea.x; x <= fenceArea.x + fenceArea.width; x += FENCE_SPACING) {
-                    if (x < openingStart || x > openingEnd) {
-                        fencePosts.push({ x: x, y: fenceArea.y + fenceArea.height });
-                    }
-                }
-
+                // --- SIMPLIFIED: No longer need to generate individual posts ---
                 world.plots.push({
-                    x: plotX, y: plotY,
-                    width: PLOT_WIDTH, height: PLOT_HEIGHT,
+                    x: plotsStartX + col * (PLOT_WIDTH + AISLE_WIDTH),
+                    y: plotsStartY + row * (PLOT_HEIGHT + VERTICAL_PADDING),
+                    width: PLOT_WIDTH,
+                    height: PLOT_HEIGHT,
                     subdivisions: 4,
-                    fencePosts: fencePosts // Store the calculated posts
                 });
             }
         }
@@ -97,13 +66,9 @@ document.addEventListener('DOMContentLoaded', () => {
         colors: { skin: '#E0AC69', shirt: '#2a52be', pants: '#3d2b1f' }
     };
 
+    // --- Unchanged Joystick & Event Listener code ---
     let isJoystickActive = false, joystick = { x: 0, y: 0 };
     let joystickCenterX, joystickCenterY, joystickRadius;
-    function setupJoystick() { /* ... unchanged ... */ }
-    function onPointerDown(e) { /* ... unchanged ... */ }
-    function onPointerUp() { /* ... unchanged ... */ }
-    function onPointerMove(e) { /* ... unchanged ... */ }
-    // --- Unchanged Joystick logic from here ---
     function setupJoystick() {
         const rect = joystickContainer.getBoundingClientRect();
         joystickCenterX = rect.left + rect.width / 2;
@@ -131,33 +96,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const stickX = normalizedX * stickMoveDistance; const stickY = normalizedY * stickMoveDistance;
         joystickStick.style.transform = `translate(${stickX}px, ${stickY}px)`;
     }
-    // --- End of unchanged Joystick logic ---
 
-
-    function drawPlots() { /* ... unchanged ... */ }
-    function drawShops() { /* ... unchanged ... */ }
-    function drawPlayer() { /* ... unchanged ... */ }
-    // --- Unchanged Drawing Functions ---
+    // --- Unchanged Drawing Functions (drawPlots, drawShops, drawPlayer) ---
     function drawPlots() {
         ctx.strokeStyle = '#6b4423'; 
         world.plots.forEach(plot => {
-            ctx.fillStyle = PLOT_SOIL_COLOR;
-            ctx.fillRect(plot.x, plot.y, plot.width, plot.height);
-            ctx.lineWidth = 6;
-            ctx.strokeRect(plot.x, plot.y, plot.width, plot.height);
+            ctx.fillStyle = PLOT_SOIL_COLOR; ctx.fillRect(plot.x, plot.y, plot.width, plot.height);
+            ctx.lineWidth = 6; ctx.strokeRect(plot.x, plot.y, plot.width, plot.height);
             const subHeight = plot.height / plot.subdivisions;
             ctx.lineWidth = 3; 
             for (let i = 1; i < plot.subdivisions; i++) {
-                ctx.beginPath();
-                ctx.moveTo(plot.x, plot.y + i * subHeight);
-                ctx.lineTo(plot.x + plot.width, plot.y + i * subHeight);
-                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(plot.x, plot.y + i * subHeight);
+                ctx.lineTo(plot.x + plot.width, plot.y + i * subHeight); ctx.stroke();
             }
         });
     }
     function drawShops() {
-        ctx.font = "bold 16px Arial";
-        ctx.textAlign = "center";
+        ctx.font = "bold 16px Arial"; ctx.textAlign = "center";
         world.shops.forEach(shop => {
             const counterWidth = 120, counterHeight = 40, poleWidth = 10, poleHeight = 60, awningHeight = 30;
             ctx.fillStyle = '#6b4423'; ctx.fillRect(shop.x, shop.y, counterWidth, counterHeight);
@@ -167,55 +122,78 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.fillStyle = shop.awningColor1; ctx.fillRect(shop.x, awningY, counterWidth, awningHeight);
             ctx.fillStyle = shop.awningColor2;
             for(let i = 0; i < counterWidth; i += 20) { ctx.fillRect(shop.x + i, awningY, 10, awningHeight); }
-            ctx.fillStyle = "#000000";
-            ctx.fillText(shop.label, shop.x + counterWidth / 2, shop.y - poleHeight - awningHeight - 10);
+            ctx.fillStyle = "#000000"; ctx.fillText(shop.label, shop.x + counterWidth / 2, shop.y - poleHeight - awningHeight - 10);
         });
     }
     function drawPlayer() {
         const p = player;
         const torsoX = p.x - p.torso.width / 2; const torsoY = p.y - p.torso.height / 2;
-        ctx.fillStyle = p.colors.pants;
-        ctx.fillRect(torsoX, torsoY + p.torso.height, p.leg.width, p.leg.height);
+        ctx.fillStyle = p.colors.pants; ctx.fillRect(torsoX, torsoY + p.torso.height, p.leg.width, p.leg.height);
         ctx.fillRect(torsoX + p.torso.width - p.leg.width, torsoY + p.torso.height, p.leg.width, p.leg.height);
-        ctx.fillStyle = p.colors.skin;
-        ctx.fillRect(torsoX - p.arm.width, torsoY, p.arm.width, p.arm.height);
+        ctx.fillStyle = p.colors.skin; ctx.fillRect(torsoX - p.arm.width, torsoY, p.arm.width, p.arm.height);
         ctx.fillRect(torsoX + p.torso.width, torsoY, p.arm.width, p.arm.height);
-        ctx.fillStyle = p.colors.shirt;
-        ctx.fillRect(torsoX, torsoY, p.torso.width, p.torso.height);
-        ctx.fillStyle = p.colors.skin;
-        ctx.beginPath();
-        ctx.arc(p.x, torsoY - p.head.radius, p.head.radius, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillStyle = p.colors.shirt; ctx.fillRect(torsoX, torsoY, p.torso.width, p.torso.height);
+        ctx.fillStyle = p.colors.skin; ctx.beginPath();
+        ctx.arc(p.x, torsoY - p.head.radius, p.head.radius, 0, Math.PI * 2); ctx.fill();
     }
-    // --- End of Unchanged Drawing Functions ---
 
 
     // =================================================================
-    // --- NEW: Function to draw all the fences ---
+    // --- REWRITTEN: Function to draw solid fences with directional openings ---
     // =================================================================
     function drawFences() {
-        ctx.fillStyle = FENCE_COLOR;
-        world.plots.forEach(plot => {
-            plot.fencePosts.forEach(post => {
-                // Center the rect on the post coordinate for a better look
-                ctx.fillRect(
-                    post.x - FENCE_POST_SIZE / 2, 
-                    post.y - FENCE_POST_SIZE / 2, 
-                    FENCE_POST_SIZE, 
-                    FENCE_POST_SIZE
-                );
-            });
+        ctx.strokeStyle = FENCE_COLOR;
+        ctx.lineWidth = FENCE_LINE_WIDTH;
+        
+        world.plots.forEach((plot, index) => {
+            const col = index % PLOT_COLS; // 0 for left column, 1 for right
+            
+            // Calculate fence boundaries
+            const fx = plot.x - FENCE_PADDING;
+            const fy = plot.y - FENCE_PADDING;
+            const fw = plot.width + (FENCE_PADDING * 2);
+            const fh = plot.height + (FENCE_PADDING * 2);
+
+            // Calculate opening position (vertically centered)
+            const openingStartY = fy + (fh / 2) - (FENCE_OPENING_WIDTH / 2);
+            const openingEndY = openingStartY + FENCE_OPENING_WIDTH;
+
+            // Start drawing a new path for this fence
+            ctx.beginPath();
+
+            // Draw top and bottom lines (always solid)
+            ctx.moveTo(fx, fy);
+            ctx.lineTo(fx + fw, fy);
+            ctx.moveTo(fx, fy + fh);
+            ctx.lineTo(fx + fw, fy + fh);
+
+            if (col === 0) { // Left column plots, opening on the RIGHT
+                // Draw full left side
+                ctx.moveTo(fx, fy);
+                ctx.lineTo(fx, fy + fh);
+                // Draw right side with a gap
+                ctx.moveTo(fx + fw, fy);
+                ctx.lineTo(fx + fw, openingStartY);
+                ctx.moveTo(fx + fw, openingEndY);
+                ctx.lineTo(fx + fw, fy + fh);
+            } else { // Right column plots, opening on the LEFT
+                // Draw full right side
+                ctx.moveTo(fx + fw, fy);
+                ctx.lineTo(fx + fw, fy + fh);
+                // Draw left side with a gap
+                ctx.moveTo(fx, fy);
+                ctx.lineTo(fx, openingStartY);
+                ctx.moveTo(fx, openingEndY);
+                ctx.lineTo(fx, fy + fh);
+            }
+            
+            // Render the lines for this fence
+            ctx.stroke();
         });
     }
 
     function gameLoop() {
-        // 1. UPDATE player position
-        if (isJoystickActive) {
-            player.x += joystick.x * player.speed;
-            player.y += joystick.y * player.speed;
-        }
-
-        // 2. PREVENT player from going off-screen
+        if (isJoystickActive) { player.x += joystick.x * player.speed; player.y += joystick.y * player.speed; }
         const characterLeftEdge = player.x - player.torso.width / 2 - player.arm.width;
         const characterRightEdge = player.x + player.torso.width / 2 + player.arm.width;
         const characterTopEdge = player.y - player.torso.height / 2 - player.head.radius * 2;
@@ -225,16 +203,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (characterTopEdge < 0) player.y = player.torso.height / 2 + player.head.radius * 2;
         if (characterBottomEdge > canvas.height) player.y = canvas.height - player.torso.height / 2 - player.leg.height;
         
-        // 3. DRAW everything
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
         drawPlots();
-        // --- NEW: Call the drawFences function ---
         drawFences();
         drawShops();
         drawPlayer();
-
-        // 4. REQUEST the next frame
         requestAnimationFrame(gameLoop);
     }
 
