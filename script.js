@@ -1,21 +1,24 @@
-// --- FIX: Wait for the entire page to load before running the script ---
+// Wait for the entire page to load before running the script
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- SETUP ---
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
+    // ** NEW: Get the game container to move the background **
+    const gameContainer = document.getElementById('game-container'); 
 
     const joystickContainer = document.getElementById('joystick-container');
     const joystickStick = document.getElementById('joystick-stick');
 
-    // Set canvas to fill the screen
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
     // --- PLAYER ---
+    // ** CHANGE: 'x' and 'y' are now 'worldX' and 'worldY' to represent position in the game world **
+    // The player will start at the center of our world (0,0)
     const player = {
-        x: canvas.width / 2,
-        y: canvas.height / 2,
+        worldX: 0,
+        worldY: 0,
         speed: 4,
         torso: { width: 30, height: 45 },
         head: { radius: 12 },
@@ -28,13 +31,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- JOYSTICK ---
+    // ** NEW: The Camera object **
+    // This will track the top-left corner of the visible area of the world.
+    const camera = {
+        x: 0,
+        y: 0
+    };
+
+    // --- JOYSTICK (This section remains unchanged) ---
     let isJoystickActive = false;
     let joystick = { x: 0, y: 0 };
     let joystickCenterX, joystickCenterY, joystickRadius;
 
-    // --- FIX: Function to calculate joystick position reliably ---
-    // We call this on load and on resize to make sure it's always correct.
     function setupJoystick() {
         const rect = joystickContainer.getBoundingClientRect();
         joystickCenterX = rect.left + rect.width / 2;
@@ -42,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
         joystickRadius = joystickContainer.offsetWidth / 2;
     }
     
-    // --- EVENT LISTENERS ---
+    // --- EVENT LISTENERS (This section remains unchanged) ---
     joystickContainer.addEventListener('mousedown', onPointerDown);
     window.addEventListener('mousemove', onPointerMove);
     window.addEventListener('mouseup', onPointerUp);
@@ -53,7 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function onPointerDown(e) {
         isJoystickActive = true;
         e.preventDefault(); 
-        // We can update the joystick position here in case it moved
         setupJoystick(); 
     }
 
@@ -74,7 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let dy = pointerY - joystickCenterY;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        // This can be NaN if distance is 0, handle that
         if (distance === 0) {
             joystick.x = 0;
             joystick.y = 0;
@@ -93,10 +99,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- DRAWING FUNCTION ---
+    // ** CHANGE: The player is now always drawn in the center of the screen. **
     function drawPlayer() {
+        // The player's position on the SCREEN is always the center
+        const screenX = canvas.width / 2;
+        const screenY = canvas.height / 2;
+
         const p = player;
-        const torsoX = p.x - p.torso.width / 2;
-        const torsoY = p.y - p.torso.height / 2;
+        const torsoX = screenX - p.torso.width / 2;
+        const torsoY = screenY - p.torso.height / 2;
 
         ctx.fillStyle = p.colors.pants;
         ctx.fillRect(torsoX, torsoY + p.torso.height, p.leg.width, p.leg.height);
@@ -111,42 +122,48 @@ document.addEventListener('DOMContentLoaded', () => {
         
         ctx.fillStyle = p.colors.skin;
         ctx.beginPath();
-        ctx.arc(p.x, torsoY - p.head.radius, p.head.radius, 0, Math.PI * 2);
+        // ** CHANGE: Head is drawn relative to the screen center **
+        ctx.arc(screenX, torsoY - p.head.radius, p.head.radius, 0, Math.PI * 2);
         ctx.fill();
     }
 
     // --- GAME LOOP ---
     function gameLoop() {
+        // 1. UPDATE player's WORLD position based on joystick input
         if (isJoystickActive) {
-            player.x += joystick.x * player.speed;
-            player.y += joystick.y * player.speed;
+            player.worldX += joystick.x * player.speed;
+            player.worldY += joystick.y * player.speed;
         }
 
-        const characterLeftEdge = player.x - player.torso.width / 2 - player.arm.width;
-        const characterRightEdge = player.x + player.torso.width / 2 + player.arm.width;
-        const characterTopEdge = player.y - player.torso.height / 2 - player.head.radius * 2;
-        const characterBottomEdge = player.y + player.torso.height / 2 + player.leg.height;
+        // 2. ** NEW: Update the camera to follow the player **
+        // The camera's top-left corner is positioned so the player is in the center.
+        camera.x = player.worldX - canvas.width / 2;
+        camera.y = player.worldY - canvas.height / 2;
 
-        if (characterLeftEdge < 0) player.x = player.torso.width / 2 + player.arm.width;
-        if (characterRightEdge > canvas.width) player.x = canvas.width - player.torso.width / 2 - player.arm.width;
-        if (characterTopEdge < 0) player.y = player.torso.height / 2 + player.head.radius * 2;
-        if (characterBottomEdge > canvas.height) player.y = canvas.height - player.torso.height / 2 - player.leg.height;
-        
+        // 3. ** NEW: Move the background to simulate camera movement **
+        // We move the background in the opposite direction of the camera.
+        gameContainer.style.backgroundPosition = `-${camera.x}px -${camera.y}px`;
+
+        // 4. DRAW everything
+        // Clear the canvas. The player is the only thing on the canvas for now.
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw the player (who will always be in the center of the canvas)
         drawPlayer();
+        
+        // 5. REQUEST the next frame
         requestAnimationFrame(gameLoop);
     }
 
-    // --- WINDOW RESIZE ---
+    // --- WINDOW RESIZE (unchanged) ---
     window.addEventListener('resize', () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        // Recalculate joystick position on resize
         setupJoystick(); 
     });
 
     // --- START THE GAME ---
-    setupJoystick(); // Initial setup
-    gameLoop(); // Start the loop
+    setupJoystick(); 
+    gameLoop();
 
-}); // End of the DOMContentLoaded wrapper
+});
