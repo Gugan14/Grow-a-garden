@@ -1,27 +1,20 @@
-/* Basic reset to remove default browser margins and paddings */
 body, html {
     margin: 0;
     padding: 0;
-    overflow: hidden; /* Prevents scrollbars from appearing */
+    overflow: hidden;
     height: 100%;
     width: 100%;
 }
 
-/* The main game container, which will have our stud-like background */
 #game-container {
     position: relative;
-    width: 100vw; /* 100% of the viewport width */
-    height: 100vh; /* 100% of the viewport height */
-
-    /* --- This is the magic for the "Green Stud-like Platform" --- */
-    /* A base green color, similar to Roblox grass */
+    width: 100vw;
+    height: 100vh;
     background-color: #2a842a; 
-    /* We add a repeating radial gradient to create the "stud" effect */
     background-image: radial-gradient(circle at center, rgba(0,0,0,0.15) 2px, transparent 2px);
-    background-size: 20px 20px; /* This sets the spacing of the studs */
+    background-size: 20px 20px;
 }
 
-/* The canvas where the game is drawn. It's transparent so we see the background */
 #game-canvas {
     display: block;
     position: absolute;
@@ -29,25 +22,22 @@ body, html {
     left: 0;
 }
 
-/* The outer circle of our joystick */
 #joystick-container {
     position: absolute;
     bottom: 30px;
     left: 30px;
     width: 120px;
     height: 120px;
-    background-color: rgba(128, 128, 128, 0.5); /* Semi-transparent grey */
-    border-radius: 50%; /* Makes it a circle */
+    background-color: rgba(128, 128, 128, 0.5);
+    border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-/* The inner circle (the stick) of our joystick */
 #joystick-stick {
     width: 60px;
     height: 60px;
-    background-color: rgba(80, 80, 80, 0.7); /* Darker grey */
+    background-color: rgba(80, 80, 80, 0.7);
     border-radius: 50%;
-    /* We'll move this with JavaScript, so no position is needed here */
 }
