@@ -5,21 +5,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const joystickContainer = document.getElementById('joystick-container');
     const joystickStick = document.getElementById('joystick-stick');
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    
+    // --- We will define the player object here, but set its values later ---
+    let player = {};
     const world = { plots: [], shops: [] };
-
-    // --- CHANGED: Plot dimensions are larger ---
-    const PLOT_WIDTH = 1000;
-    const PLOT_HEIGHT = 500;
-    const PLOT_ROWS = 3;
-    const PLOT_COLS = 2;
-    const VERTICAL_PADDING = 50;
-    const AISLE_WIDTH = 200;
-    const PLOT_SOIL_COLOR = '#8b5a2b';
     
-    function setupWorld() {
+    // =================================================================
+    // --- DRAMATICALLY CHANGED VALUES FOR TESTING ---
+    // =================================================================
+    const PLOT_WIDTH = 350;     // Much wider
+    const PLOT_HEIGHT = 200;    // Much taller
+    const PLOT_ROWS = 3, PLOT_COLS = 2;
+    const VERTICAL_PADDING = 40, AISLE_WIDTH = 150, PLOT_SOIL_COLOR = '#8b5a2b';
+    
+    // This function now sets up BOTH the player and the world
+    function setupGame() {
+        // Set canvas size first
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // --- NEW: Player setup is now in its own function ---
+        setupPlayer();
+        
+        // --- World setup ---
         world.plots = [];
         world.shops = [];
 
@@ -33,14 +40,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 world.plots.push({
                     x: plotsStartX + col * (PLOT_WIDTH + AISLE_WIDTH),
                     y: plotsStartY + row * (PLOT_HEIGHT + VERTICAL_PADDING),
-                    width: PLOT_WIDTH,
-                    height: PLOT_HEIGHT,
-                    subdivisions: 4 
+                    width: PLOT_WIDTH, height: PLOT_HEIGHT, subdivisions: 4 
                 });
             }
         }
         
-        const shopY = plotsStartY - 100; 
+        const shopY = plotsStartY - 80; 
         const shopCenterDistance = 200;
         const shopWidth = 120;
 
@@ -54,17 +59,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const player = {
-        x: canvas.width / 2, y: canvas.height - 100,
-        // --- CHANGED: Player speed reduced for better feel ---
-        speed: 3.5, 
-        // --- CHANGED: Player dimensions are smaller ---
-        torso: { width: 22, height: 32 },
-        head: { radius: 9 },
-        arm: { width: 8, height: 30 },
-        leg: { width: 9, height: 35 },
-        colors: { skin: '#E0AC69', shirt: '#2a52be', pants: '#3d2b1f' }
-    };
+    function setupPlayer() {
+        player = {
+            x: canvas.width / 2, y: canvas.height - 70,
+            // --- DRAMATICALLY SMALLER PLAYER ---
+            speed: 3, 
+            torso: { width: 15, height: 22 },
+            head: { radius: 6 },
+            arm: { width: 5, height: 20 },
+            leg: { width: 6, height: 24 },
+            colors: { skin: '#E0AC69', shirt: '#2a52be', pants: '#3d2b1f' }
+        };
+    }
 
     let isJoystickActive = false;
     let joystick = { x: 0, y: 0 };
@@ -77,6 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
         joystickRadius = joystickContainer.offsetWidth / 2;
     }
     
+    // --- Event Listeners and Pointer Functions (unchanged logic) ---
     function onPointerDown(e) { isJoystickActive = true; e.preventDefault(); setupJoystick(); }
     function onPointerUp() { isJoystickActive = false; joystick = { x: 0, y: 0 }; joystickStick.style.transform = `translate(0px, 0px)`; }
     function onPointerMove(e) {
@@ -92,7 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const stickX = normalizedX * stickMoveDistance; const stickY = normalizedY * stickMoveDistance;
         joystickStick.style.transform = `translate(${stickX}px, ${stickY}px)`;
     }
-
     joystickContainer.addEventListener('mousedown', onPointerDown);
     window.addEventListener('mousemove', onPointerMove);
     window.addEventListener('mouseup', onPointerUp);
@@ -100,6 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('touchmove', onPointerMove, { passive: false });
     window.addEventListener('touchend', onPointerUp);
 
+    // --- Drawing Functions (unchanged logic) ---
     function drawPlots() {
         ctx.strokeStyle = '#6b4423'; 
         world.plots.forEach(plot => {
@@ -117,26 +124,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
     function drawShops() {
         ctx.font = "bold 16px Arial";
         ctx.textAlign = "center";
         world.shops.forEach(shop => {
             const counterWidth = 120, counterHeight = 40, poleWidth = 10, poleHeight = 60, awningHeight = 30;
-            ctx.fillStyle = '#6b4423';
-            ctx.fillRect(shop.x, shop.y, counterWidth, counterHeight);
+            ctx.fillStyle = '#6b4423'; ctx.fillRect(shop.x, shop.y, counterWidth, counterHeight);
             ctx.fillRect(shop.x + poleWidth, shop.y - poleHeight, poleWidth, poleHeight);
             ctx.fillRect(shop.x + counterWidth - (poleWidth*2), shop.y - poleHeight, poleWidth, poleHeight);
             const awningY = shop.y - poleHeight - awningHeight;
-            ctx.fillStyle = shop.awningColor1;
-            ctx.fillRect(shop.x, awningY, counterWidth, awningHeight);
+            ctx.fillStyle = shop.awningColor1; ctx.fillRect(shop.x, awningY, counterWidth, awningHeight);
             ctx.fillStyle = shop.awningColor2;
             for(let i = 0; i < counterWidth; i += 20) { ctx.fillRect(shop.x + i, awningY, 10, awningHeight); }
             ctx.fillStyle = "#000000";
             ctx.fillText(shop.label, shop.x + counterWidth / 2, shop.y - poleHeight - awningHeight - 10);
         });
     }
-
     function drawPlayer() {
         const p = player;
         const torsoX = p.x - p.torso.width / 2; const torsoY = p.y - p.torso.height / 2;
@@ -154,20 +157,18 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.fill();
     }
 
+    // --- Main Game Loop (unchanged logic) ---
     function gameLoop() {
-        if (isJoystickActive) {
-            player.x += joystick.x * player.speed;
-            player.y += joystick.y * player.speed;
-        }
+        if (!player.torso) return; // Don't run if player isn't set up yet
+        if (isJoystickActive) { player.x += joystick.x * player.speed; player.y += joystick.y * player.speed; }
         const characterLeftEdge = player.x - player.torso.width / 2 - player.arm.width;
         const characterRightEdge = player.x + player.torso.width / 2 + player.arm.width;
         const characterTopEdge = player.y - player.torso.height / 2 - player.head.radius * 2;
         const characterBottomEdge = player.y + player.torso.height / 2 + player.leg.height;
         if (characterLeftEdge < 0) player.x = player.torso.width / 2 + player.arm.width;
         if (characterRightEdge > canvas.width) player.x = canvas.width - player.torso.width / 2 - player.arm.width;
-        if (characterTopEdge < 0) player.y = player.torso.height / 2 + player.head.radius * 2;
+        if (characterTopEdge < 0) player.y = canvas.height / 2 + player.head.radius * 2;
         if (characterBottomEdge > canvas.height) player.y = canvas.height - player.torso.height / 2 - player.leg.height;
-        
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawPlots();
         drawShops();
@@ -175,14 +176,14 @@ document.addEventListener('DOMContentLoaded', () => {
         requestAnimationFrame(gameLoop);
     }
 
+    // --- Event listener for resizing now calls the main setup function ---
     window.addEventListener('resize', () => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        setupWorld(); 
+        setupGame(); 
         setupJoystick();
     });
 
-    setupWorld(); 
+    // --- Initial Game Start ---
+    setupGame(); 
     setupJoystick(); 
     gameLoop();
 });
