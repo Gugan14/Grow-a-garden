@@ -1,33 +1,22 @@
-// Wait for the entire page to load before running the script
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- SETUP ---
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
-
     const joystickContainer = document.getElementById('joystick-container');
     const joystickStick = document.getElementById('joystick-stick');
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     
-    // =================================================================
-    // --- WORLD & MAP DATA ---
-    // =================================================================
-    const world = {
-        plots: [],
-        shops: [] 
-    };
+    const world = { plots: [], shops: [] };
 
-    const PLOT_WIDTH = 220;
-    const PLOT_HEIGHT = 120;
-    const PLOT_ROWS = 3; 
-    const PLOT_COLS = 2;
-    const VERTICAL_PADDING = 50; 
-    const AISLE_WIDTH = 200;     
-    const PLOT_SOIL_COLOR = '#8b5a2b';
+    const PLOT_WIDTH = 220, PLOT_HEIGHT = 120, PLOT_ROWS = 3, PLOT_COLS = 2;
+    const VERTICAL_PADDING = 50, AISLE_WIDTH = 200, PLOT_SOIL_COLOR = '#8b5a2b';
     
     function setupWorld() {
+        // --- CRITICAL FIX: Clear old world data before recalculating ---
+        // This was the source of the bug. Without this, resizing the window
+        // would create duplicate plots and shops on top of the old ones.
         world.plots = [];
         world.shops = [];
 
@@ -48,43 +37,31 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        // --- CHANGED: Shop positions are now calculated from the screen center for better control ---
         const shopY = plotsStartY - 100; 
-        const shopCenterDistance = 200; // The distance between the centers of the two shops. Adjust this value to move them closer/further.
-        const shopWidth = 120; // The width of the shop counter
+        const shopCenterDistance = 200;
+        const shopWidth = 120;
 
-        // Seed Shop (to the left of center)
         world.shops.push({
             x: (canvas.width / 2) - (shopCenterDistance / 2) - (shopWidth / 2),
-            y: shopY,
-            label: "Seed Shop",
-            awningColor1: '#ffffff',
-            awningColor2: '#4a90e2' // Blue
+            y: shopY, label: "Seed Shop", awningColor1: '#ffffff', awningColor2: '#4a90e2'
         });
-        // Sell Place (to the right of center)
         world.shops.push({
             x: (canvas.width / 2) + (shopCenterDistance / 2) - (shopWidth / 2),
-            y: shopY,
-            label: "Sell Here",
-            awningColor1: '#ffffff',
-            awningColor2: '#e24a4a' // Red
+            y: shopY, label: "Sell Here", awningColor1: '#ffffff', awningColor2: '#e24a4a'
         });
     }
 
-    // --- PLAYER (unchanged) ---
     const player = {
-        x: canvas.width / 2,
-        y: canvas.height - 100, 
-        speed: 4,
+        x: canvas.width / 2, y: canvas.height - 100, speed: 4,
         torso: { width: 30, height: 45 }, head: { radius: 12 },
         arm: { width: 10, height: 40 }, leg: { width: 12, height: 50 },
         colors: { skin: '#E0AC69', shirt: '#2a52be', pants: '#3d2b1f' }
     };
 
-    // --- JOYSTICK (unchanged) ---
     let isJoystickActive = false;
     let joystick = { x: 0, y: 0 };
     let joystickCenterX, joystickCenterY, joystickRadius;
+
     function setupJoystick() {
         const rect = joystickContainer.getBoundingClientRect();
         joystickCenterX = rect.left + rect.width / 2;
@@ -92,13 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
         joystickRadius = joystickContainer.offsetWidth / 2;
     }
     
-    // --- EVENT LISTENERS (unchanged) ---
-    joystickContainer.addEventListener('mousedown', onPointerDown);
-    window.addEventListener('mousemove', onPointerMove);
-    window.addEventListener('mouseup', onPointerUp);
-    joystickContainer.addEventListener('touchstart', onPointerDown, { passive: false });
-    window.addEventListener('touchmove', onPointerMove, { passive: false });
-    window.addEventListener('touchend', onPointerUp);
     function onPointerDown(e) { isJoystickActive = true; e.preventDefault(); setupJoystick(); }
     function onPointerUp() { isJoystickActive = false; joystick = { x: 0, y: 0 }; joystickStick.style.transform = `translate(0px, 0px)`; }
     function onPointerMove(e) {
@@ -115,21 +85,20 @@ document.addEventListener('DOMContentLoaded', () => {
         joystickStick.style.transform = `translate(${stickX}px, ${stickY}px)`;
     }
 
-    // --- WORLD DRAWING FUNCTIONS ---
+    joystickContainer.addEventListener('mousedown', onPointerDown);
+    window.addEventListener('mousemove', onPointerMove);
+    window.addEventListener('mouseup', onPointerUp);
+    joystickContainer.addEventListener('touchstart', onPointerDown, { passive: false });
+    window.addEventListener('touchmove', onPointerMove, { passive: false });
+    window.addEventListener('touchend', onPointerUp);
 
     function drawPlots() {
         ctx.strokeStyle = '#6b4423'; 
-        
         world.plots.forEach(plot => {
             ctx.fillStyle = PLOT_SOIL_COLOR;
             ctx.fillRect(plot.x, plot.y, plot.width, plot.height);
-
-            // --- FIX: Set border widths inside the loop to ensure they are the same for every plot ---
-            // Draw the main, "medium" sized outer border
             ctx.lineWidth = 6;
             ctx.strokeRect(plot.x, plot.y, plot.width, plot.height);
-
-            // Draw the smaller subdivision lines
             const subHeight = plot.height / plot.subdivisions;
             ctx.lineWidth = 3; 
             for (let i = 1; i < plot.subdivisions; i++) {
@@ -144,31 +113,22 @@ document.addEventListener('DOMContentLoaded', () => {
     function drawShops() {
         ctx.font = "bold 16px Arial";
         ctx.textAlign = "center";
-        
         world.shops.forEach(shop => {
-            const counterWidth = 120; const counterHeight = 40;
-            const poleWidth = 10; const poleHeight = 60;
-            const awningHeight = 30;
-
+            const counterWidth = 120, counterHeight = 40, poleWidth = 10, poleHeight = 60, awningHeight = 30;
             ctx.fillStyle = '#6b4423';
             ctx.fillRect(shop.x, shop.y, counterWidth, counterHeight);
             ctx.fillRect(shop.x + poleWidth, shop.y - poleHeight, poleWidth, poleHeight);
             ctx.fillRect(shop.x + counterWidth - (poleWidth*2), shop.y - poleHeight, poleWidth, poleHeight);
-            
             const awningY = shop.y - poleHeight - awningHeight;
             ctx.fillStyle = shop.awningColor1;
             ctx.fillRect(shop.x, awningY, counterWidth, awningHeight);
             ctx.fillStyle = shop.awningColor2;
-            for(let i = 0; i < counterWidth; i += 20) {
-                 ctx.fillRect(shop.x + i, awningY, 10, awningHeight);
-            }
-            
+            for(let i = 0; i < counterWidth; i += 20) { ctx.fillRect(shop.x + i, awningY, 10, awningHeight); }
             ctx.fillStyle = "#000000";
             ctx.fillText(shop.label, shop.x + counterWidth / 2, shop.y - poleHeight - awningHeight - 10);
         });
     }
 
-    // --- PLAYER DRAWING FUNCTION (unchanged) ---
     function drawPlayer() {
         const p = player;
         const torsoX = p.x - p.torso.width / 2; const torsoY = p.y - p.torso.height / 2;
@@ -186,7 +146,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.fill();
     }
 
-    // --- GAME LOOP (unchanged) ---
     function gameLoop() {
         if (isJoystickActive) {
             player.x += joystick.x * player.speed;
@@ -208,7 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
         requestAnimationFrame(gameLoop);
     }
 
-    // --- WINDOW RESIZE (unchanged) ---
     window.addEventListener('resize', () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
@@ -216,7 +174,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setupJoystick();
     });
 
-    // --- START THE GAME (unchanged) ---
     setupWorld(); 
     setupJoystick(); 
     gameLoop();
