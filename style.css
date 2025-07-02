@@ -1,113 +1,53 @@
-body {
+/* Basic reset to remove default browser margins and paddings */
+body, html {
     margin: 0;
-    background-color: #1a1a1a;
-    font-family: 'Press Start 2P', cursive;
-    color: #fff;
-    overflow: hidden; /* Prevent scrolling */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    user-select: none;
+    padding: 0;
+    overflow: hidden; /* Prevents scrollbars from appearing */
+    height: 100%;
+    width: 100%;
 }
 
+/* The main game container, which will have our stud-like background */
 #game-container {
     position: relative;
-    width: 100%;
-    max-width: 800px;
-    aspect-ratio: 16 / 9; /* Maintain aspect ratio */
-    background: black;
-    border: 5px solid #4d4d4d;
+    width: 100vw; /* 100% of the viewport width */
+    height: 100vh; /* 100% of the viewport height */
+
+    /* --- This is the magic for the "Green Stud-like Platform" --- */
+    /* A base green color, similar to Roblox grass */
+    background-color: #2a842a; 
+    /* We add a repeating radial gradient to create the "stud" effect */
+    background-image: radial-gradient(circle at center, rgba(0,0,0,0.15) 2px, transparent 2px);
+    background-size: 20px 20px; /* This sets the spacing of the studs */
 }
 
+/* The canvas where the game is drawn. It's transparent so we see the background */
 #game-canvas {
-    width: 100%;
-    height: 100%;
-    image-rendering: pixelated; /* Keep our pixel art crisp */
-}
-
-/* UI Overlays */
-#ui-container {
+    display: block;
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none; /* Allow clicks to go through to the canvas */
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
 }
 
-#player-stats {
-    display: flex;
-    justify-content: space-around;
-    padding: 10px;
-    background: rgba(0, 0, 0, 0.5);
-    font-size: clamp(0.6rem, 2.5vw, 0.8rem);
-}
-
-#interaction-prompt {
-    align-self: center;
-    margin-bottom: 10%;
-    background: rgba(0, 0, 0, 0.7);
-    padding: 10px 20px;
-    border-radius: 5px;
-    border: 2px solid white;
-}
-
-/* Joystick container */
-#joystick-zone {
+/* The outer circle of our joystick */
+#joystick-container {
     position: absolute;
-    bottom: 20px;
-    left: 20px;
+    bottom: 30px;
+    left: 30px;
     width: 120px;
     height: 120px;
-    /* Background is handled by nipplejs */
-}
-
-/* Modals (Shop, Garden) */
-.modal {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
+    background-color: rgba(128, 128, 128, 0.5); /* Semi-transparent grey */
+    border-radius: 50%; /* Makes it a circle */
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 100;
 }
 
-.modal-content {
-    background: #3e603e;
-    padding: 20px;
-    border-radius: 10px;
-    border: 5px solid #2a402a;
-    text-align: center;
-    max-width: 90%;
-    max-height: 90%;
-    overflow-y: auto;
+/* The inner circle (the stick) of our joystick */
+#joystick-stick {
+    width: 60px;
+    height: 60px;
+    background-color: rgba(80, 80, 80, 0.7); /* Darker grey */
+    border-radius: 50%;
+    /* We'll move this with JavaScript, so no position is needed here */
 }
-.modal-content h2 { color: #ffde7a; margin-top: 0; }
-.modal-content p { font-size: 0.8em; }
-
-/* Garden and Shop specific styles */
-#garden-plot { display: grid; grid-template-columns: repeat(5, 1fr); grid-gap: 10px; margin: 20px 0;}
-.garden-cell { width: 60px; height: 60px; background-color: #8b4513; border: 2px solid #6b371c; display: flex; justify-content: center; align-items: center; font-size: 2rem; cursor: pointer;}
-.garden-cell:hover { background-color: #9c5a2c; }
-.garden-cell.ready { animation: pulse 1.5s infinite; }
-@keyframes pulse { 0% { box-shadow: 0 0 0 0 #ffde7a; } 70% { box-shadow: 0 0 10px 15px rgba(255, 222, 122, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 222, 122, 0); } }
-
-#shop-items { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin: 20px 0; }
-.shop-item { background: #5d925d; padding: 10px; border-radius: 5px; border: 2px solid #3e603e; cursor: pointer; text-align: center; }
-.shop-item:hover { background-color: #6daa6d; transform: translateY(-2px); }
-.shop-item.selected { border-color: #ffde7a; box-shadow: 0 0 10px #ffde7a; }
-.shop-item.disabled { opacity: 0.5; cursor: not-allowed; background-color: #4a6d4a; }
-.shop-icon { font-size: 2rem; }
-
-button { font-family: 'Press Start 2P', cursive; padding: 10px 15px; border: none; background: #ffde7a; color: #6b371c; cursor: pointer; margin-top: 10px; }
-button:hover { background: #ffd04b; }
-
-.hidden { display: none; }
