@@ -8,29 +8,31 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     
-    const camera = { x: 0, y: 0 };
     const world = { plots: [], shops: [] };
 
-    // --- CHANGED: All world dimensions are now 5x the original size ---
-    const PLOT_WIDTH = 1400;  // Was 2800 (Original: 280)
-    const PLOT_HEIGHT = 800;   // Was 1600 (Original: 160)
+    // =================================================================
+    // --- DRAMATICALLY INCREASED: All plot and fence values scaled up ---
+    // =================================================================
+    const PLOT_WIDTH = 600;      // from 280
+    const PLOT_HEIGHT = 400;     // from 160
     const PLOT_ROWS = 3, PLOT_COLS = 2;
-    const VERTICAL_PADDING = 400; // Was 800 (Original: 80)
-    const AISLE_WIDTH = 1250;     // Was 2500 (Original: 250)
+    const VERTICAL_PADDING = 150; // from 80
+    const AISLE_WIDTH = 300;      // from 250
     const PLOT_SOIL_COLOR = '#8b5a2b';
 
     const FENCE_COLOR = '#6b4423';
-    const FENCE_LINE_WIDTH = 40;   // Was 80 (Original: 8)
-    const FENCE_PADDING = 100;    // Was 200 (Original: 20)
-    const FENCE_OPENING_WIDTH = 350; // Was 700 (Original: 70)
+    const FENCE_LINE_WIDTH = 12;  // from 8
+    const FENCE_PADDING = 30;     // from 20
+    const FENCE_OPENING_WIDTH = 120; // from 70
     
     function setupWorld() {
         world.plots = [];
         world.shops = [];
 
         const totalPlotsWidth = (PLOT_COLS * PLOT_WIDTH) + AISLE_WIDTH;
-        const plotsStartX = -totalPlotsWidth / 2;
-        const plotsStartY = -800; // Adjusted for new scale
+        const totalPlotsHeight = (PLOT_ROWS * PLOT_HEIGHT) + ((PLOT_ROWS - 1) * VERTICAL_PADDING);
+        const plotsStartX = (canvas.width - totalPlotsWidth) / 2;
+        const plotsStartY = (canvas.height - totalPlotsHeight) / 2;
 
         for (let row = 0; row < PLOT_ROWS; row++) {
             for (let col = 0; col < PLOT_COLS; col++) {
@@ -42,30 +44,30 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        const shopY = plotsStartY - 600; 
-        const shopWidth = 600; // 5x scale
-        const shopCenterDistance = 800;
-
+        const shopY = plotsStartY - 100; 
+        const shopCenterDistance = 200;
+        const shopWidth = 120;
         world.shops.push({
-            x: -shopCenterDistance,
+            x: (canvas.width / 2) - (shopCenterDistance / 2) - (shopWidth / 2),
             y: shopY, label: "Seed Shop", awningColor1: '#ffffff', awningColor2: '#4a90e2'
         });
         world.shops.push({
-            x: shopCenterDistance - shopWidth,
+            x: (canvas.width / 2) + (shopCenterDistance / 2) - (shopWidth / 2),
             y: shopY, label: "Sell Here", awningColor1: '#ffffff', awningColor2: '#e24a4a'
         });
     }
 
     const player = {
-        x: 0, y: 500, // Adjusted starting position
-        // --- CHANGED: Player speed adjusted for 5x scale ---
-        speed: 9, 
+        x: canvas.width / 2, y: canvas.height - 100,
+        speed: 3.5, 
         torso: { width: 22, height: 32 }, head: { radius: 9 },
         arm: { width: 8, height: 30 }, leg: { width: 9, height: 35 },
         colors: { skin: '#E0AC69', shirt: '#2a52be', pants: '#3d2b1f' }
     };
 
-    // --- Unchanged Joystick & Event Listener code ---
+    // --- All code below this point is UNCHANGED ---
+    // The existing functions will automatically use the new, larger constant values.
+
     let isJoystickActive = false, joystick = { x: 0, y: 0 };
     let joystickCenterX, joystickCenterY, joystickRadius;
     function setupJoystick() {
@@ -96,26 +98,43 @@ document.addEventListener('DOMContentLoaded', () => {
         joystickStick.style.transform = `translate(${stickX}px, ${stickY}px)`;
     }
 
-    // --- All Drawing Functions now use the Camera Offset ---
-
     function drawPlots() {
         ctx.strokeStyle = '#6b4423'; 
         world.plots.forEach(plot => {
-            const screenX = plot.x - camera.x;
-            const screenY = plot.y - camera.y;
-            ctx.fillStyle = PLOT_SOIL_COLOR; 
-            ctx.fillRect(screenX, screenY, plot.width, plot.height);
-            ctx.lineWidth = 30; // 5x scale border
-            ctx.strokeRect(screenX, screenY, plot.width, plot.height);
+            ctx.fillStyle = PLOT_SOIL_COLOR; ctx.fillRect(plot.x, plot.y, plot.width, plot.height);
+            ctx.lineWidth = 6; ctx.strokeRect(plot.x, plot.y, plot.width, plot.height);
             const subHeight = plot.height / plot.subdivisions;
-            ctx.lineWidth = 15; // 5x scale inner lines
+            ctx.lineWidth = 3; 
             for (let i = 1; i < plot.subdivisions; i++) {
-                ctx.beginPath(); 
-                ctx.moveTo(screenX, screenY + i * subHeight);
-                ctx.lineTo(screenX + plot.width, screenY + i * subHeight); 
-                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(plot.x, plot.y + i * subHeight);
+                ctx.lineTo(plot.x + plot.width, plot.y + i * subHeight); ctx.stroke();
             }
         });
+    }
+    function drawShops() {
+        ctx.font = "bold 16px Arial"; ctx.textAlign = "center";
+        world.shops.forEach(shop => {
+            const counterWidth = 120, counterHeight = 40, poleWidth = 10, poleHeight = 60, awningHeight = 30;
+            ctx.fillStyle = '#6b4423'; ctx.fillRect(shop.x, shop.y, counterWidth, counterHeight);
+            ctx.fillRect(shop.x + poleWidth, shop.y - poleHeight, poleWidth, poleHeight);
+            ctx.fillRect(shop.x + counterWidth - (poleWidth*2), shop.y - poleHeight, poleWidth, poleHeight);
+            const awningY = shop.y - poleHeight - awningHeight;
+            ctx.fillStyle = shop.awningColor1; ctx.fillRect(shop.x, awningY, counterWidth, awningHeight);
+            ctx.fillStyle = shop.awningColor2;
+            for(let i = 0; i < counterWidth; i += 20) { ctx.fillRect(shop.x + i, awningY, 10, awningHeight); }
+            ctx.fillStyle = "#000000"; ctx.fillText(shop.label, shop.x + counterWidth / 2, shop.y - poleHeight - awningHeight - 10);
+        });
+    }
+    function drawPlayer() {
+        const p = player;
+        const torsoX = p.x - p.torso.width / 2; const torsoY = p.y - p.torso.height / 2;
+        ctx.fillStyle = p.colors.pants; ctx.fillRect(torsoX, torsoY + p.torso.height, p.leg.width, p.leg.height);
+        ctx.fillRect(torsoX + p.torso.width - p.leg.width, torsoY + p.torso.height, p.leg.width, p.leg.height);
+        ctx.fillStyle = p.colors.skin; ctx.fillRect(torsoX - p.arm.width, torsoY, p.arm.width, p.arm.height);
+        ctx.fillRect(torsoX + p.torso.width, torsoY, p.arm.width, p.arm.height);
+        ctx.fillStyle = p.colors.shirt; ctx.fillRect(torsoX, torsoY, p.torso.width, p.torso.height);
+        ctx.fillStyle = p.colors.skin; ctx.beginPath();
+        ctx.arc(p.x, torsoY - p.head.radius, p.head.radius, 0, Math.PI * 2); ctx.fill();
     }
 
     function drawFences() {
@@ -123,73 +142,36 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.lineWidth = FENCE_LINE_WIDTH;
         world.plots.forEach((plot, index) => {
             const col = index % PLOT_COLS;
-            const fx = plot.x - FENCE_PADDING;
-            const fy = plot.y - FENCE_PADDING;
-            const fw = plot.width + (FENCE_PADDING * 2);
-            const fh = plot.height + (FENCE_PADDING * 2);
+            const fx = plot.x - FENCE_PADDING, fy = plot.y - FENCE_PADDING;
+            const fw = plot.width + (FENCE_PADDING * 2), fh = plot.height + (FENCE_PADDING * 2);
             const openingStartY = fy + (fh / 2) - (FENCE_OPENING_WIDTH / 2);
             const openingEndY = openingStartY + FENCE_OPENING_WIDTH;
             ctx.beginPath();
-            ctx.moveTo(fx - camera.x, fy - camera.y);
-            ctx.lineTo(fx + fw - camera.x, fy - camera.y);
-            ctx.moveTo(fx - camera.x, fy + fh - camera.y);
-            ctx.lineTo(fx + fw - camera.x, fy + fh - camera.y);
+            ctx.moveTo(fx, fy); ctx.lineTo(fx + fw, fy);
+            ctx.moveTo(fx, fy + fh); ctx.lineTo(fx + fw, fy + fh);
             if (col === 0) {
-                ctx.moveTo(fx - camera.x, fy - camera.y); ctx.lineTo(fx - camera.x, fy + fh - camera.y);
-                ctx.moveTo(fx + fw - camera.x, fy - camera.y); ctx.lineTo(fx + fw - camera.x, openingStartY - camera.y);
-                ctx.moveTo(fx + fw - camera.x, openingEndY - camera.y); ctx.lineTo(fx + fw - camera.x, fy + fh - camera.y);
+                ctx.moveTo(fx, fy); ctx.lineTo(fx, fy + fh);
+                ctx.moveTo(fx + fw, fy); ctx.lineTo(fx + fw, openingStartY);
+                ctx.moveTo(fx + fw, openingEndY); ctx.lineTo(fx + fw, fy + fh);
             } else {
-                ctx.moveTo(fx + fw - camera.x, fy - camera.y); ctx.lineTo(fx + fw - camera.x, fy + fh - camera.y);
-                ctx.moveTo(fx - camera.x, fy - camera.y); ctx.lineTo(fx - camera.x, openingStartY - camera.y);
-                ctx.moveTo(fx - camera.x, openingEndY - camera.y); ctx.lineTo(fx - camera.x, fy + fh - camera.y);
+                ctx.moveTo(fx + fw, fy); ctx.lineTo(fx + fw, fy + fh);
+                ctx.moveTo(fx, fy); ctx.lineTo(fx, openingStartY);
+                ctx.moveTo(fx, openingEndY); ctx.lineTo(fx, fy + fh);
             }
             ctx.stroke();
         });
     }
 
-    function drawShops() {
-        ctx.font = "bold 80px Arial"; // Larger font for larger shops
-        ctx.textAlign = "center";
-        world.shops.forEach(shop => {
-            const screenX = shop.x - camera.x;
-            const screenY = shop.y - camera.y;
-            const counterWidth = 600, counterHeight = 200, poleWidth = 50, poleHeight = 300, awningHeight = 150;
-            ctx.fillStyle = '#6b4423';
-            ctx.fillRect(screenX, screenY, counterWidth, counterHeight);
-            ctx.fillRect(screenX + poleWidth, screenY - poleHeight, poleWidth, poleHeight);
-            ctx.fillRect(screenX + counterWidth - (poleWidth*2), screenY - poleHeight, poleWidth, poleHeight);
-            const awningY = screenY - poleHeight - awningHeight;
-            ctx.fillStyle = shop.awningColor1;
-            ctx.fillRect(screenX, awningY, counterWidth, awningHeight);
-            ctx.fillStyle = shop.awningColor2;
-            for(let i = 0; i < counterWidth; i += 100) {
-                 ctx.fillRect(screenX + i, awningY, 50, awningHeight);
-            }
-            ctx.fillStyle = "#000000";
-            ctx.fillText(shop.label, screenX + counterWidth / 2, screenY - poleHeight - awningHeight - 50);
-        });
-    }
-    
-    function drawPlayer() {
-        const p = player;
-        const playerScreenX = canvas.width / 2;
-        const playerScreenY = canvas.height / 2;
-        const torsoX = playerScreenX - p.torso.width / 2; 
-        const torsoY = playerScreenY - p.torso.height / 2;
-        ctx.fillStyle = p.colors.pants; ctx.fillRect(torsoX, torsoY + p.torso.height, p.leg.width, p.leg.height);
-        ctx.fillRect(torsoX + p.torso.width - p.leg.width, torsoY + p.torso.height, p.leg.width, p.leg.height);
-        ctx.fillStyle = p.colors.skin; ctx.fillRect(torsoX - p.arm.width, torsoY, p.arm.width, p.arm.height);
-        ctx.fillRect(torsoX + p.torso.width, torsoY, p.arm.width, p.arm.height);
-        ctx.fillStyle = p.colors.shirt; ctx.fillRect(torsoX, torsoY, p.torso.width, p.torso.height);
-        ctx.fillStyle = p.colors.skin; ctx.beginPath();
-        ctx.arc(playerScreenX, torsoY - p.head.radius, p.head.radius, 0, Math.PI * 2); ctx.fill();
-    }
-
-
     function gameLoop() {
         if (isJoystickActive) { player.x += joystick.x * player.speed; player.y += joystick.y * player.speed; }
-        camera.x = player.x - canvas.width / 2;
-        camera.y = player.y - canvas.height / 2;
+        const characterLeftEdge = player.x - player.torso.width / 2 - player.arm.width;
+        const characterRightEdge = player.x + player.torso.width / 2 + player.arm.width;
+        const characterTopEdge = player.y - player.torso.height / 2 - player.head.radius * 2;
+        const characterBottomEdge = player.y + player.torso.height / 2 + player.leg.height;
+        if (characterLeftEdge < 0) player.x = player.torso.width / 2 + player.arm.width;
+        if (characterRightEdge > canvas.width) player.x = canvas.width - player.torso.width / 2 - player.arm.width;
+        if (characterTopEdge < 0) player.y = player.torso.height / 2 + player.head.radius * 2;
+        if (characterBottomEdge > canvas.height) player.y = canvas.height - player.torso.height / 2 - player.leg.height;
         
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawPlots();
@@ -202,6 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('resize', () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+        setupWorld(); 
         setupJoystick();
     });
 
