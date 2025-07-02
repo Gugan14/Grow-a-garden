@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Grow a Garden</title>
+  <style>
+    canvas { background: #a8d08d; display: block; margin: auto; }
+    body { text-align: center; font-family: Arial; }
+    button { margin: 5px; }
+  </style>
+</head>
+<body>
+  <h1>🌱 Grow a Garden</h1>
+  <div>
+    <button onclick="currentTool = 'seed'">🌰 Plant Seed</button>
+    <button onclick="currentTool = 'water'">💧 Water</button>
+    <button onclick="currentTool = 'harvest'">🌾 Harvest</button>
+  </div>
+  <p>💰 Coins: <span id="coins">0</span></p>
+  <canvas id="gameCanvas" width="600" height="600"></canvas>
+  <script src="game.js"></script>
+</body>
+</html>
