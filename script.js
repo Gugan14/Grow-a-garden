@@ -12,29 +12,25 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.height = window.innerHeight;
     
     // =================================================================
-    // --- WORLD & MAP DATA (Layout has been changed to match the image) ---
+    // --- WORLD & MAP DATA ---
     // =================================================================
     const world = {
         plots: [],
         shops: [] 
-        // --- REMOVED: No more fences ---
     };
 
-    // --- CHANGED: New constants for the 3x2 layout ---
     const PLOT_WIDTH = 220;
     const PLOT_HEIGHT = 120;
     const PLOT_ROWS = 3; 
     const PLOT_COLS = 2;
-    const VERTICAL_PADDING = 50; // Space between plots vertically
-    const AISLE_WIDTH = 200;     // Wide central aisle
+    const VERTICAL_PADDING = 50; 
+    const AISLE_WIDTH = 200;     
     const PLOT_SOIL_COLOR = '#8b5a2b';
     
     function setupWorld() {
-        // --- Make sure to clear old data when resizing ---
         world.plots = [];
         world.shops = [];
 
-        // --- UPDATED: Plot position calculation for the new layout ---
         const totalPlotsWidth = (PLOT_COLS * PLOT_WIDTH) + AISLE_WIDTH;
         const totalPlotsHeight = (PLOT_ROWS * PLOT_HEIGHT) + ((PLOT_ROWS - 1) * VERTICAL_PADDING);
         const plotsStartX = (canvas.width - totalPlotsWidth) / 2;
@@ -52,24 +48,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        // --- REMOVED: All fence calculation logic is gone ---
+        // --- CHANGED: Shop positions are now calculated from the screen center for better control ---
+        const shopY = plotsStartY - 100; 
+        const shopCenterDistance = 200; // The distance between the centers of the two shops. Adjust this value to move them closer/further.
+        const shopWidth = 120; // The width of the shop counter
 
-        // --- UPDATED: Shop positions to match new layout ---
-        const shopY = plotsStartY - 100; // Position shops above the plots
-        const firstColX = plotsStartX;
-        const secondColX = plotsStartX + PLOT_WIDTH + AISLE_WIDTH;
-
-        // Seed Shop (top-left)
+        // Seed Shop (to the left of center)
         world.shops.push({
-            x: firstColX + (PLOT_WIDTH / 2) - 60, // Center the shop over the plot
+            x: (canvas.width / 2) - (shopCenterDistance / 2) - (shopWidth / 2),
             y: shopY,
             label: "Seed Shop",
             awningColor1: '#ffffff',
             awningColor2: '#4a90e2' // Blue
         });
-        // Sell Place (top-right)
+        // Sell Place (to the right of center)
         world.shops.push({
-            x: secondColX + (PLOT_WIDTH / 2) - 60, // Center the shop over the plot
+            x: (canvas.width / 2) + (shopCenterDistance / 2) - (shopWidth / 2),
             y: shopY,
             label: "Sell Here",
             awningColor1: '#ffffff',
@@ -77,19 +71,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- PLAYER ---
+    // --- PLAYER (unchanged) ---
     const player = {
-        // --- UPDATED: Player starts in the middle of the aisle ---
         x: canvas.width / 2,
-        y: canvas.height - 100, // Start near the bottom of the screen
+        y: canvas.height - 100, 
         speed: 4,
-        torso: { width: 30, height: 45 },
-        head: { radius: 12 },
-        arm: { width: 10, height: 40 },
-        leg: { width: 12, height: 50 },
-        colors: {
-            skin: '#E0AC69', shirt: '#2a52be', pants: '#3d2b1f',
-        }
+        torso: { width: 30, height: 45 }, head: { radius: 12 },
+        arm: { width: 10, height: 40 }, leg: { width: 12, height: 50 },
+        colors: { skin: '#E0AC69', shirt: '#2a52be', pants: '#3d2b1f' }
     };
 
     // --- JOYSTICK (unchanged) ---
@@ -130,15 +119,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function drawPlots() {
         ctx.strokeStyle = '#6b4423'; 
-        ctx.lineWidth = 8;
         
         world.plots.forEach(plot => {
             ctx.fillStyle = PLOT_SOIL_COLOR;
             ctx.fillRect(plot.x, plot.y, plot.width, plot.height);
+
+            // --- FIX: Set border widths inside the loop to ensure they are the same for every plot ---
+            // Draw the main, "medium" sized outer border
+            ctx.lineWidth = 6;
             ctx.strokeRect(plot.x, plot.y, plot.width, plot.height);
 
+            // Draw the smaller subdivision lines
             const subHeight = plot.height / plot.subdivisions;
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 3; 
             for (let i = 1; i < plot.subdivisions; i++) {
                 ctx.beginPath();
                 ctx.moveTo(plot.x, plot.y + i * subHeight);
@@ -147,8 +140,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    
-    // --- REMOVED: The drawFences() function is no longer needed. ---
 
     function drawShops() {
         ctx.font = "bold 16px Arial";
@@ -180,8 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- PLAYER DRAWING FUNCTION (unchanged) ---
     function drawPlayer() {
         const p = player;
-        const torsoX = p.x - p.torso.width / 2;
-        const torsoY = p.y - p.torso.height / 2;
+        const torsoX = p.x - p.torso.width / 2; const torsoY = p.y - p.torso.height / 2;
         ctx.fillStyle = p.colors.pants;
         ctx.fillRect(torsoX, torsoY + p.torso.height, p.leg.width, p.leg.height);
         ctx.fillRect(torsoX + p.torso.width - p.leg.width, torsoY + p.torso.height, p.leg.width, p.leg.height);
@@ -196,15 +186,12 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.fill();
     }
 
-    // --- UPDATED GAME LOOP ---
+    // --- GAME LOOP (unchanged) ---
     function gameLoop() {
-        // 1. UPDATE player position
         if (isJoystickActive) {
             player.x += joystick.x * player.speed;
             player.y += joystick.y * player.speed;
         }
-
-        // 2. PREVENT player from going off-screen
         const characterLeftEdge = player.x - player.torso.width / 2 - player.arm.width;
         const characterRightEdge = player.x + player.torso.width / 2 + player.arm.width;
         const characterTopEdge = player.y - player.torso.height / 2 - player.head.radius * 2;
@@ -214,21 +201,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (characterTopEdge < 0) player.y = player.torso.height / 2 + player.head.radius * 2;
         if (characterBottomEdge > canvas.height) player.y = canvas.height - player.torso.height / 2 - player.leg.height;
         
-        // 3. DRAW everything
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Draw the world elements
         drawPlots();
         drawShops();
-        // --- REMOVED: drawFences() call is gone ---
-
         drawPlayer();
-
-        // 4. REQUEST the next frame
         requestAnimationFrame(gameLoop);
     }
 
-    // --- WINDOW RESIZE ---
+    // --- WINDOW RESIZE (unchanged) ---
     window.addEventListener('resize', () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
@@ -236,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupJoystick();
     });
 
-    // --- START THE GAME ---
+    // --- START THE GAME (unchanged) ---
     setupWorld(); 
     setupJoystick(); 
     gameLoop();
