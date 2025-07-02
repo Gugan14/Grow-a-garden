@@ -10,20 +10,21 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const world = { plots: [], shops: [] };
 
-    // =================================================================
-    // --- Constant values updated based on your request ---
-    // =================================================================
+    // --- World & Plot Constants ---
     const PLOT_WIDTH = 600;
-    const PLOT_HEIGHT = 500;     // CHANGED: Made plots taller (from 400)
+    // --- CHANGED: Plots are now even taller ---
+    const PLOT_HEIGHT = 500;      // from 400
     const PLOT_ROWS = 3, PLOT_COLS = 2;
     const VERTICAL_PADDING = 150; 
     const AISLE_WIDTH = 300;      
     const PLOT_SOIL_COLOR = '#8b5a2b';
 
+    // --- Fence Constants ---
     const FENCE_COLOR = '#6b4423';
-    const FENCE_LINE_WIDTH = 8;  // CHANGED: Made fence thinner (from 12)
+    // --- CHANGED: Fences are now less thick ---
+    const FENCE_LINE_WIDTH = 8;   // from 12
     const FENCE_PADDING = 30;     
-    const FENCE_OPENING_WIDTH = 90; // CHANGED: Made opening smaller (from 120)
+    const FENCE_OPENING_WIDTH = 120;
     
     function setupWorld() {
         world.plots = [];
@@ -66,7 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- All code below this point is UNCHANGED ---
-    // The existing functions will automatically use the new constant values.
 
     let isJoystickActive = false, joystick = { x: 0, y: 0 };
     let joystickCenterX, joystickCenterY, joystickRadius;
