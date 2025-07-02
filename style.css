@@ -1,0 +1,111 @@
+body {
+    background-color: #5d925d;
+    font-family: 'Press Start 2P', cursive;
+    color: #fff;
+    text-align: center;
+    user-select: none;
+}
+
+#game-container {
+    max-width: 800px;
+    margin: 20px auto;
+    background-color: #3e603e;
+    padding: 20px;
+    border-radius: 10px;
+    border: 5px solid #2a402a;
+}
+
+h1, h2 {
+    color: #ffde7a;
+    text-shadow: 2px 2px #c4a13c;
+}
+
+#player-stats {
+    display: flex;
+    justify-content: space-around;
+    background: #2a402a;
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 5px;
+}
+
+#garden-plot {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr); /* 5x3 grid */
+    grid-gap: 10px;
+    background-color: #a0522d;
+    padding: 10px;
+    border: 5px solid #6b371c;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.garden-cell {
+    width: 100px;
+    height: 100px;
+    background-color: #8b4513;
+    border: 2px solid #6b371c;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 3rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.garden-cell:hover {
+    background-color: #9c5a2c;
+}
+
+.garden-cell.ready {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 222, 122, 0.7); }
+    70% { transform: scale(1.05); box-shadow: 0 0 10px 15px rgba(255, 222, 122, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 222, 122, 0); }
+}
+
+#shop-panel {
+    background: #2a402a;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+#shop-items {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.shop-item {
+    background: #5d925d;
+    padding: 10px;
+    border-radius: 5px;
+    border: 2px solid #3e603e;
+    cursor: pointer;
+    text-align: center;
+}
+
+.shop-item:hover {
+    background-color: #6daa6d;
+    transform: translateY(-2px);
+}
+
+.shop-item.selected {
+    border-color: #ffde7a;
+    box-shadow: 0 0 10px #ffde7a;
+}
+
+.shop-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #4a6d4a;
+}
+
+.shop-icon {
+    font-size: 2rem;
+}
