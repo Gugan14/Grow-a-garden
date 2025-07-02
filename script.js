@@ -11,8 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const world = { plots: [], shops: [] };
 
     // --- CHANGED: Plot dimensions are larger ---
-    const PLOT_WIDTH = 280;
-    const PLOT_HEIGHT = 160;
+    const PLOT_WIDTH = 1000;
+    const PLOT_HEIGHT = 500;
     const PLOT_ROWS = 3;
     const PLOT_COLS = 2;
     const VERTICAL_PADDING = 50;
