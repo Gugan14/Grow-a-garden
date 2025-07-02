@@ -10,13 +10,16 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const world = { plots: [], shops: [] };
 
-    const PLOT_WIDTH = 220, PLOT_HEIGHT = 120, PLOT_ROWS = 3, PLOT_COLS = 2;
-    const VERTICAL_PADDING = 50, AISLE_WIDTH = 200, PLOT_SOIL_COLOR = '#8b5a2b';
+    // --- CHANGED: Plot dimensions are larger ---
+    const PLOT_WIDTH = 280;
+    const PLOT_HEIGHT = 160;
+    const PLOT_ROWS = 3;
+    const PLOT_COLS = 2;
+    const VERTICAL_PADDING = 50;
+    const AISLE_WIDTH = 200;
+    const PLOT_SOIL_COLOR = '#8b5a2b';
     
     function setupWorld() {
-        // --- CRITICAL FIX: Clear old world data before recalculating ---
-        // This was the source of the bug. Without this, resizing the window
-        // would create duplicate plots and shops on top of the old ones.
         world.plots = [];
         world.shops = [];
 
@@ -52,9 +55,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const player = {
-        x: canvas.width / 2, y: canvas.height - 100, speed: 4,
-        torso: { width: 30, height: 45 }, head: { radius: 12 },
-        arm: { width: 10, height: 40 }, leg: { width: 12, height: 50 },
+        x: canvas.width / 2, y: canvas.height - 100,
+        // --- CHANGED: Player speed reduced for better feel ---
+        speed: 3.5, 
+        // --- CHANGED: Player dimensions are smaller ---
+        torso: { width: 22, height: 32 },
+        head: { radius: 9 },
+        arm: { width: 8, height: 30 },
+        leg: { width: 9, height: 35 },
         colors: { skin: '#E0AC69', shirt: '#2a52be', pants: '#3d2b1f' }
     };
 
