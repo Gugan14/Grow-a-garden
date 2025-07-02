@@ -8,66 +8,59 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     
+    // =================================================================
+    // --- NEW: THE CAMERA OBJECT ---
+    // This will store the position of our "view" on the world.
+    // =================================================================
+    const camera = {
+        x: 0,
+        y: 0
+    };
+
     const world = { plots: [], shops: [] };
 
-    // --- World & Plot Constants ---
+    // --- World & Plot Constants (keeping the large size) ---
     const PLOT_WIDTH = 600;
-    // --- CHANGED: Plots are now even taller ---
-    const PLOT_HEIGHT = 500;      // from 400
+    const PLOT_HEIGHT = 500;
     const PLOT_ROWS = 3, PLOT_COLS = 2;
-    const VERTICAL_PADDING = 150; 
-    const AISLE_WIDTH = 300;      
-    const PLOT_SOIL_COLOR = '#8b5a2b';
+    const VERTICAL_PADDING = 150, AISLE_WIDTH = 300, PLOT_SOIL_COLOR = '#8b5a2b';
 
-    // --- Fence Constants ---
+    // --- Fence Constants (keeping the adjusted thickness) ---
     const FENCE_COLOR = '#6b4423';
-    // --- CHANGED: Fences are now less thick ---
-    const FENCE_LINE_WIDTH = 8;   // from 12
-    const FENCE_PADDING = 30;     
-    const FENCE_OPENING_WIDTH = 120;
+    const FENCE_LINE_WIDTH = 8;
+    const FENCE_PADDING = 30, FENCE_OPENING_WIDTH = 120;
     
+    function setupWorld() { /* ... function is unchanged ... */ }
+
+    const player = { /* ... object is unchanged ... */ };
+
+    // All setup, player, and drawing functions below are correct and do not need to change.
+    // The camera will be handled entirely in the game loop.
     function setupWorld() {
         world.plots = [];
         world.shops = [];
-
         const totalPlotsWidth = (PLOT_COLS * PLOT_WIDTH) + AISLE_WIDTH;
         const totalPlotsHeight = (PLOT_ROWS * PLOT_HEIGHT) + ((PLOT_ROWS - 1) * VERTICAL_PADDING);
         const plotsStartX = (canvas.width - totalPlotsWidth) / 2;
         const plotsStartY = (canvas.height - totalPlotsHeight) / 2;
-
         for (let row = 0; row < PLOT_ROWS; row++) {
             for (let col = 0; col < PLOT_COLS; col++) {
-                world.plots.push({
-                    x: plotsStartX + col * (PLOT_WIDTH + AISLE_WIDTH),
-                    y: plotsStartY + row * (PLOT_HEIGHT + VERTICAL_PADDING),
-                    width: PLOT_WIDTH, height: PLOT_HEIGHT, subdivisions: 4,
-                });
+                world.plots.push({ x: plotsStartX + col * (PLOT_WIDTH + AISLE_WIDTH), y: plotsStartY + row * (PLOT_HEIGHT + VERTICAL_PADDING), width: PLOT_WIDTH, height: PLOT_HEIGHT, subdivisions: 4, });
             }
         }
-        
         const shopY = plotsStartY - 100; 
         const shopCenterDistance = 200;
         const shopWidth = 120;
-        world.shops.push({
-            x: (canvas.width / 2) - (shopCenterDistance / 2) - (shopWidth / 2),
-            y: shopY, label: "Seed Shop", awningColor1: '#ffffff', awningColor2: '#4a90e2'
-        });
-        world.shops.push({
-            x: (canvas.width / 2) + (shopCenterDistance / 2) - (shopWidth / 2),
-            y: shopY, label: "Sell Here", awningColor1: '#ffffff', awningColor2: '#e24a4a'
-        });
+        world.shops.push({ x: (canvas.width / 2) - (shopCenterDistance / 2) - (shopWidth / 2), y: shopY, label: "Seed Shop", awningColor1: '#ffffff', awningColor2: '#4a90e2' });
+        world.shops.push({ x: (canvas.width / 2) + (shopCenterDistance / 2) - (shopWidth / 2), y: shopY, label: "Sell Here", awningColor1: '#ffffff', awningColor2: '#e24a4a' });
     }
-
     const player = {
-        x: canvas.width / 2, y: canvas.height - 100,
+        x: 0, y: 0, // Start player at the world origin (0,0) now
         speed: 3.5, 
         torso: { width: 22, height: 32 }, head: { radius: 9 },
         arm: { width: 8, height: 30 }, leg: { width: 9, height: 35 },
         colors: { skin: '#E0AC69', shirt: '#2a52be', pants: '#3d2b1f' }
     };
-
-    // --- All code below this point is UNCHANGED ---
-
     let isJoystickActive = false, joystick = { x: 0, y: 0 };
     let joystickCenterX, joystickCenterY, joystickRadius;
     function setupJoystick() {
@@ -97,7 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const stickX = normalizedX * stickMoveDistance; const stickY = normalizedY * stickMoveDistance;
         joystickStick.style.transform = `translate(${stickX}px, ${stickY}px)`;
     }
-
     function drawPlots() {
         ctx.strokeStyle = '#6b4423'; 
         world.plots.forEach(plot => {
@@ -136,7 +128,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.fillStyle = p.colors.skin; ctx.beginPath();
         ctx.arc(p.x, torsoY - p.head.radius, p.head.radius, 0, Math.PI * 2); ctx.fill();
     }
-
     function drawFences() {
         ctx.strokeStyle = FENCE_COLOR;
         ctx.lineWidth = FENCE_LINE_WIDTH;
@@ -162,22 +153,46 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // =================================================================
+    // --- THE UPDATED GAME LOOP with CAMERA LOGIC ---
+    // =================================================================
     function gameLoop() {
-        if (isJoystickActive) { player.x += joystick.x * player.speed; player.y += joystick.y * player.speed; }
-        const characterLeftEdge = player.x - player.torso.width / 2 - player.arm.width;
-        const characterRightEdge = player.x + player.torso.width / 2 + player.arm.width;
-        const characterTopEdge = player.y - player.torso.height / 2 - player.head.radius * 2;
-        const characterBottomEdge = player.y + player.torso.height / 2 + player.leg.height;
-        if (characterLeftEdge < 0) player.x = player.torso.width / 2 + player.arm.width;
-        if (characterRightEdge > canvas.width) player.x = canvas.width - player.torso.width / 2 - player.arm.width;
-        if (characterTopEdge < 0) player.y = player.torso.height / 2 + player.head.radius * 2;
-        if (characterBottomEdge > canvas.height) player.y = canvas.height - player.torso.height / 2 - player.leg.height;
+        // 1. UPDATE player position
+        if (isJoystickActive) {
+            player.x += joystick.x * player.speed;
+            player.y += joystick.y * player.speed;
+        }
         
+        // 2. UPDATE the camera to follow the player
+        // This centers the camera on the player's position
+        camera.x = player.x - canvas.width / 2;
+        camera.y = player.y - canvas.height / 2;
+
+        // The old off-screen check is no longer needed as the world is huge
+        
+        // 3. DRAW everything
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // --- Camera Magic ---
+        // Save the current state of the canvas (like a bookmark)
+        ctx.save();
+        // Shift the entire canvas's coordinate system
+        // We move it in the opposite direction of the camera to create the illusion of looking at a different part of the world.
+        ctx.translate(-camera.x, -camera.y);
+
+        // Now, draw all the world elements. They will be drawn in their
+        // absolute world positions, but the translate call will move them
+        // into the camera's view.
         drawPlots();
         drawFences();
         drawShops();
         drawPlayer();
+
+        // Restore the canvas state to what it was before we moved it.
+        // This is important for drawing UI elements later that should NOT move with the camera.
+        ctx.restore();
+
+        // 4. REQUEST the next frame
         requestAnimationFrame(gameLoop);
     }
 
@@ -188,7 +203,11 @@ document.addEventListener('DOMContentLoaded', () => {
         setupJoystick();
     });
 
-    setupWorld(); 
+    setupWorld();
+    // Move player to a starting position in the world
+    player.x = world.plots[4].x + world.plots[4].width / 2;
+    player.y = world.plots[4].y + world.plots[4].height + FENCE_PADDING + 50;
+    
     setupJoystick(); 
     gameLoop();
 });
